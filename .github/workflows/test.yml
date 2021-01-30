@@ -1,0 +1,57 @@
+name: test
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        go-version:
+            - 1.14.x
+            - 1.15.x
+        os:
+            - ubuntu-latest
+            - macos-latest
+            - windows-latest
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+        - name: Install Go
+          uses: actions/setup-go@v2
+          with:
+            go-version: ${{ matrix.go-version }}
+
+        - name: checkout
+          uses: actions/checkout@v2
+
+        - name: cache
+          uses: actions/cache@v2
+          with:
+            path: ~/go/pkg/mod
+            key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+            restore-keys: |
+              ${{ runner.os }}-go-
+
+        - name: Check go-deps.txt existence
+          id: check_deps
+          uses: andstor/file-existence-action@v1
+          with:
+            files: "go-deps.txt"
+
+        - name: Read go-deps.txt
+          id: godeps
+          if: steps.check_deps.outputs.files_exists == 'true'
+          uses: juliangruber/read-file-action@v1
+          with:
+            path: ./go-deps.txt
+
+        - name: Install go-deps.txt
+          if: steps.check_deps.outputs.files_exists == 'true'
+          run: |
+            go get ${{ steps.godeps.outputs.content }}
+
+        - name: test
+          run: |
+            go test ./...
