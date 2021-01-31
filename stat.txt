@@ -1,0 +1,22 @@
+200kweb2:
+    succinct.foo: 1387512
+        leaves: []uint64: 99128
+            0: uint64: 8
+            1: uint64: 8
+            2: uint64: 8
+        labelbm: []uint64: 198224
+            0: uint64: 8
+            1: uint64: 8
+            2: uint64: 8
+        labels: []uint8: 792800
+            0: uint8: 1
+            1: uint8: 1
+            2: uint8: 1
+        ranks: []int: 198232
+            0: int: 8
+            1: int: 8
+            2: int: 8
+        selects: []int: 99128
+            0: int: 8
+            1: int: 8
+            2: int: 8

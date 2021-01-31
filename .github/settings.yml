@@ -1,0 +1,10 @@
+# Usage copy this to settings.yml
+
+_extends: gh-config
+
+
+repository:
+  name: succinct
+  description: succinct static kv
+  homepage: https://openacid.github.io/
+  topics: go, golang, kv, static, succicnt
