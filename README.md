@@ -17,6 +17,8 @@ succinct provides several static succinct data types
 
 
 - [Succinct Set](#succinct-set)
+  - [Synopsis](#synopsis)
+  - [Performance](#performance)
   - [Implementation](#implementation)
 - [License](#license)
 
@@ -28,6 +30,8 @@ succinct provides several static succinct data types
 
 Set is a succinct, sorted and static string set impl with compacted trie as
 storage. The space cost is about half lower than the original data.
+
+## Synopsis
 
 ```go
 package succinct
@@ -53,59 +57,40 @@ func ExampleNewSet() {
 }
 ```
 
-A benchmark with 200 kilo real-world words collected from web shows that:
-- the space a `Set` costs is only **57%** of original data size.
-- And a `Has()` costs about `400 ns` with a **zip-f** workload.
+## Performance
 
-```go
-package succinct
+-   200 kilo real-world words collected from web:
+    - the space costs is **57%** of original data size.
+    - And a `Has()` costs about `350 ns` with a **zip-f** workload.
 
-import (
-	"fmt"
+    Original size: 2204 KB
 
-	"github.com/openacid/low/size"
-	"github.com/openacid/testkeys"
-)
+    With comparison with string array bsearch and google [btree][] :
 
-func ExampleNewSet_memory() {
+    | Data         | Engine       | Size(KB) | Size/original | ns/op |
+    | :--          | :--          | --:      | --:           | --:   |
+    | 200kweb2     | bsearch      |  5890    |  267%         | 229   |
+    | 200kweb2     | succinct.Set |  1258    |   57%         | 356   |
+    | 200kweb2     | btree        | 12191    |  553%         | 483   |
 
-	keys := testkeys.Load("200kweb2")
+    > A string in go has two fields: a pointer to the text content and a length.
+    > Thus the space overhead is quite high with small strings.
+    > [btree][] internally has more pointers and indirections(interface).
 
-	original := 0
-	for _, k := range keys {
-		original += len(k)
-	}
 
-	s := NewSet(keys)
+-   870 kilo real-world ipv4:
+    - the space costs is **67%** of original data size.
+    - And a `Has()` costs about `500 ns` with a **zip-f** workload.
 
-	fmt.Println("With", len(keys)/1000, "thousands keys:")
-	fmt.Println("  Original size:", original/1024, "KB")
-	fmt.Println("  Compressed size:",
-		size.Of(s)/1024, "KB, ratio:",
-		size.Of(s)*100/original, "%")
-	fmt.Println("Memory layout:")
-	fmt.Println(size.Stat(s, 10, 1))
+    Original size: 6823 KB
 
-	// Output:
-	//
-	// With 235 thousands keys:
-	//   Original size: 2204 KB
-	//   Compressed size: 1258 KB, ratio: 57 %
-	// Memory layout:
-	// *succinct.Set: 1288412
-	//     succinct.Set: 1288404
-	//         leaves: []uint64: 99128
-	//             0: uint64: 8
-	//         labelBitmap: []uint64: 198224
-	//             0: uint64: 8
-	//         labels: []uint8: 792800
-	//             0: uint8: 1
-	//         ranks: []int32: 99128
-	//             0: int32: 4
-	//         selects: []int32: 99124
-	//             0: int32: 4
-}
-```
+    | Data         | Engine       | Size(KB) | Size/original | ns/op |
+    | :--          | :--          | --:      | --:           | --:   |
+    | 870k_ip4_hex | bsearch      | 17057    |  500%         | 276   |
+    | 870k_ip4_hex | succinct.Set |  2316    |   67%         | 496   |
+    | 870k_ip4_hex | btree        | 40388    | 1183%         | 577   |
+
+
 
 ## Implementation
 
@@ -147,3 +132,5 @@ i-th bit indicates the i-th node is a leaf:
 # License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+[btree]: https://github.com/google/btree

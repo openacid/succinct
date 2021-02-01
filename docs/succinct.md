@@ -67,9 +67,3 @@ NewSet creates a new *Set struct, from a slice of sorted strings.
 func (ss *Set) Has(key string) bool
 ```
 Has query for a key and return whether it presents in the Set.
-
-#### func (*Set) String
-
-```go
-func (ss *Set) String() string
-```

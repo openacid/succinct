@@ -1,11 +1,15 @@
 package succinct
 
 import (
+	"fmt"
 	"sort"
+	"strconv"
 	"testing"
 
+	"github.com/google/btree"
 	"github.com/openacid/low/bitmap"
 	"github.com/openacid/low/mathext/zipf"
+	"github.com/openacid/low/size"
 	"github.com/openacid/testkeys"
 	"github.com/openacid/testutil"
 	"github.com/stretchr/testify/require"
@@ -155,20 +159,120 @@ func TestNew(t *testing.T) {
 
 var OutputSet bool
 
-func BenchmarkSet_Has(b *testing.B) {
-	fn := "200kweb2"
-	keys := testkeys.Load(fn)
+func BenchmarkSet_200kweb2(b *testing.B) {
+	keys := getKeys("200kweb2")
 
-	s := NewSet(keys)
+	subBenSetHas(b, keys)
+	subBenArrayBsearch(b, keys)
+	subBenBtree(b, keys)
+}
 
-	load := zipf.Accesses(2, 1.5, len(keys), b.N, nil)
+func BenchmarkSet_870k_ip4(b *testing.B) {
+	keys := getKeys("870k_ip4_hex")
 
-	b.ResetTimer()
+	subBenSetHas(b, keys)
+	subBenArrayBsearch(b, keys)
+	subBenBtree(b, keys)
+}
 
-	var v bool
-	for i := 0; i < b.N; i++ {
-		rst := s.Has(keys[load[i]])
-		v = v || rst
+func subBenSetHas(b *testing.B, keys []string) int {
+	sz := 0
+	b.Run(fmt.Sprintf("Has:n=%d", len(keys)), func(b *testing.B) {
+		s := NewSet(keys)
+
+		load := zipf.Accesses(2, 1.5, len(keys), b.N, nil)
+		sz = size.Of(s)
+
+		b.ResetTimer()
+
+		var v bool
+		for i := 0; i < b.N; i++ {
+			rst := s.Has(keys[load[i]])
+			v = v || rst
+		}
+		OutputSet = v
+	})
+
+	return sz
+}
+
+func subBenArrayBsearch(b *testing.B, keys []string) int {
+	sz := 0
+	b.Run(fmt.Sprintf("bsearch:n=%d", len(keys)), func(b *testing.B) {
+
+		load := zipf.Accesses(2, 1.5, len(keys), b.N, nil)
+		sz = size.Of(keys)
+
+		b.ResetTimer()
+
+		var v bool
+		for i := 0; i < b.N; i++ {
+			rst := sort.SearchStrings(keys, keys[load[i]])
+			v = v || rst == 8
+		}
+		OutputSet = v
+	})
+
+	return sz
+}
+
+type BtreeElt struct {
+	Key string
+}
+
+func (kv *BtreeElt) Less(than btree.Item) bool {
+	o := than.(*BtreeElt)
+	return kv.Key < o.Key
+}
+
+func subBenBtree(b *testing.B, keys []string) int {
+	sz := 0
+	b.Run(fmt.Sprintf("btree:n=%d", len(keys)), func(b *testing.B) {
+
+		bt := btree.New(32)
+		for _, k := range keys {
+			v := &BtreeElt{Key: k}
+			bt.ReplaceOrInsert(v)
+		}
+
+		load := zipf.Accesses(2, 1.5, len(keys), b.N, nil)
+		sz = size.Of(bt)
+
+		b.ResetTimer()
+
+		var id int
+		for i := 0; i < b.N; i++ {
+			idx := load[i]
+			itm := &BtreeElt{Key: keys[idx]}
+			ee := bt.Get(itm)
+			id += len(ee.(*BtreeElt).Key)
+		}
+		OutputSet = id > 8
+	})
+	return sz
+}
+
+func getKeys(name string) []string {
+
+	keys := testkeys.Load(name)
+	if name == "870k_ip4_hex" {
+		ks := make([]string, 0, len(keys))
+		for _, k := range keys {
+			n, err := strconv.ParseUint(k, 16, 0)
+			if err != nil {
+				panic(err)
+			}
+
+			packed := string([]byte{
+				byte(n >> 24),
+				byte(n >> 16),
+				byte(n >> 8),
+				byte(n),
+			})
+
+			ks = append(ks, packed)
+		}
+		return ks
 	}
-	OutputSet = v
+	return keys
 }
