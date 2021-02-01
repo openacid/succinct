@@ -117,7 +117,7 @@ func TestNew(t *testing.T) {
 					"01101010 10101101 10101010 10101011 01110111 01101010 11011111 01011010," +
 					"10101011 11011000 00000000 00000000 00000000 00000000 00000000 00000000"),
 				ranks:   []int32{0, 21, 52, 87, 126, 135},
-				selects: []int32{1, 151, 260},
+				selects: []int32{1, 89, 151, 208, 260},
 				labels:  "Aabnrabdehioubdmnrstaiyeiolnronduiaitaigsudseremimocdirieatcemsiiaisiliactoneeoascthesbndiatnneesirenoaeioedneaacarninlcelhnaaeugnsses",
 			},
 		},

@@ -30,10 +30,10 @@ func ExampleNewSet_memory() {
 	//
 	// With 235 thousands keys:
 	//   Original size: 2204 KB
-	//   Compressed size: 1209 KB, ratio: 54 %
+	//   Compressed size: 1258 KB, ratio: 57 %
 	// Memory layout:
-	// *succinct.Set: 1238864
-	//     succinct.Set: 1238856
+	// *succinct.Set: 1288412
+	//     succinct.Set: 1288404
 	//         leaves: []uint64: 99128
 	//             0: uint64: 8
 	//         labelBitmap: []uint64: 198224
@@ -42,6 +42,6 @@ func ExampleNewSet_memory() {
 	//             0: uint8: 1
 	//         ranks: []int32: 99128
 	//             0: int32: 4
-	//         selects: []int32: 49576
+	//         selects: []int32: 99124
 	//             0: int32: 4
 }

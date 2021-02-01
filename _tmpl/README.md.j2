@@ -23,8 +23,8 @@ storage. The space cost is about half lower than the original data.
 ```
 
 A benchmark with 200 kilo real-world words collected from web shows that:
-- the space a `Set` costs is only **54%** of original data size.
-- And a `Has()` costs about `1600 ns` with a **zip-f** workload.
+- the space a `Set` costs is only **57%** of original data size.
+- And a `Has()` costs about `400 ns` with a **zip-f** workload.
 
 ```go
 {% include 'sskv_example_big_test.go' %}

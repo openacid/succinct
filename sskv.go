@@ -1,7 +1,9 @@
 // Package succinct provides several succinct data types.
 package succinct
 
-import "math/bits"
+import (
+	"github.com/openacid/low/bitmap"
+)
 
 // Set is a succinct, sorted and static string set impl with compacted trie as
 // storage. The space cost is about half lower than the original data.
@@ -126,21 +128,7 @@ func getBit(bm []uint64, i int) uint64 {
 
 // init builds pre-calculated cache to speed up rank() and select()
 func (ss *Set) init() {
-	ss.ranks = []int32{0}
-	for i := 0; i < len(ss.labelBitmap); i++ {
-		n := bits.OnesCount64(ss.labelBitmap[i])
-		ss.ranks = append(ss.ranks, ss.ranks[len(ss.ranks)-1]+int32(n))
-	}
-
-	ss.selects = []int32{}
-	n := 0
-	for i := 0; i < len(ss.labelBitmap)<<6; i++ {
-		z := int(ss.labelBitmap[i>>6]>>uint(i&63)) & 1
-		if z == 1 && n&63 == 0 {
-			ss.selects = append(ss.selects, int32(i))
-		}
-		n += z
-	}
+	ss.selects, ss.ranks = bitmap.IndexSelect32R64(ss.labelBitmap)
 }
 
 // countZeros counts the number of "0" in a bitmap before the i-th bit(excluding
@@ -149,7 +137,8 @@ func (ss *Set) init() {
 //   countZeros("010010", 4) == 3
 //   //          012345
 func countZeros(bm []uint64, ranks []int32, i int) int {
-	return i - int(ranks[i>>6]) - bits.OnesCount64(bm[i>>6]&(1<<uint(i&63)-1))
+	a, _ := bitmap.Rank64(bm, ranks, int32(i))
+	return i - int(a)
 }
 
 // selectIthOne returns the index of the i-th "1" in a bitmap, on behalf of rank
@@ -158,20 +147,6 @@ func countZeros(bm []uint64, ranks []int32, i int) int {
 //   selectIthOne("010010", 1) == 4
 //   //            012345
 func selectIthOne(bm []uint64, ranks, selects []int32, i int) int {
-	base := int(selects[i>>6] & ^63)
-	findIthOne := i - int(ranks[base>>6])
-
-	for i := base >> 6; i < len(bm); i++ {
-		bitIdx := 0
-		for w := bm[i]; w > 0; {
-			findIthOne -= int(w & 1)
-			if findIthOne < 0 {
-				return i<<6 + bitIdx
-			}
-			t0 := bits.TrailingZeros64(w &^ 1)
-			w >>= uint(t0)
-			bitIdx += t0
-		}
-	}
-	panic("no more ones")
+	a, _ := bitmap.Select32R64(bm, selects, ranks, int32(i))
+	return int(a)
 }
