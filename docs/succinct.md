@@ -49,6 +49,32 @@ In storage it packs labels together and bitmaps joined with separator `1`:
     labels(ignore space): "ab bx u c y v d"
     label bitmap:          0010010101010101111
 
+In this way every node has a `0` pointing to it(except the root node) and has a
+corresponding `1` for it:
+
+                                   .-----.
+                           .--.    | .---|-.
+                           |.-|--. | | .-|-|.
+                           || ↓  ↓ | | | ↓ ↓↓
+    labels(ignore space):  ab bx u c y v d øøø
+    label bitmap:          0010010101010101111
+    node-id:               0  1  2 3 4 5 6 789
+                              || | ↑ ↑ ↑ |   ↑
+                              || `-|-|-' `---'
+                              |`---|-'
+                              `----'
+
+To walk from a parent node along a label to a child node, count the number of
+`0` upto the bit the label position, then find where the the corresponding `1`
+is:
+
+    childNodeId = select1(rank0(i))
+
+In our impl, it is:
+
+    nodeId = countZeros(ss.labelBitmap, ss.ranks, bmIdx+1)
+    bmIdx = selectIthOne(ss.labelBitmap, ss.ranks, ss.selects, nodeId-1) + 1
+
 Finally leaf nodes are indicated by another bitmap `leaves`, in which a `1` at
 i-th bit indicates the i-th node is a leaf:
 
@@ -67,3 +93,9 @@ NewSet creates a new *Set struct, from a slice of sorted strings.
 func (ss *Set) Has(key string) bool
 ```
 Has query for a key and return whether it presents in the Set.
+
+#### func (*Set) String
+
+```go
+func (ss *Set) String() string
+```
